@@ -105,7 +105,7 @@ func (t *ESTask) Init(tdesc TaskDesc) Task {
 			id: tdesc.Id,
 		},
 		cmd:     tdesc.Cmd,
-		subTask: tdesc.Task,
+		subTask: tdesc.Tasks,
 		timeout: time.Duration(tdesc.Timeout) * time.Second,
 	}
 }

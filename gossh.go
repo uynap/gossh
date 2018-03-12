@@ -27,7 +27,7 @@ type JobDesc struct {
 	Pass       string     `json:"pass"`
 	Timeout    int        `json:"timeout"`
 	Concurrent int        `json:"concurrent"`
-	Task       []TaskDesc `json:"task"`
+	Tasks      []TaskDesc `json:"tasks"`
 }
 
 type TaskDesc struct {
@@ -36,7 +36,7 @@ type TaskDesc struct {
 	Type       string     `json:"type"`
 	Timeout    int        `json:"timeout"`
 	Concurrent int        `json:"concurrent"`
-	Task       []TaskDesc `json:"task"`
+	Tasks      []TaskDesc `json:"tasks"`
 }
 
 func decodeJSON(filename string) ([]JobDesc, error) {
@@ -79,12 +79,12 @@ type BatchJob struct {
 	Jobs []JobDesc
 }
 
-func LoadJobs(file interface{}) *BatchJob {
+func LoadBP(file interface{}) *BatchJob {
 	batchJob := &BatchJob{}
 
 	switch file := file.(type) {
 	default:
-		panic("LoadJobs: only support file path or []JobDesc")
+		panic("LoadBP: only support file path or []JobDesc")
 	case []JobDesc:
 		batchJob.Jobs = file
 	case string:
@@ -95,8 +95,8 @@ func LoadJobs(file interface{}) *BatchJob {
 
 		// Add Task ID for each job
 		for i, job := range jobs {
-			for j, _ := range job.Task {
-				jobs[i].Task[j].Id = NextID()
+			for j, _ := range job.Tasks {
+				jobs[i].Tasks[j].Id = NextID()
 			}
 		}
 
@@ -129,7 +129,7 @@ func (bj *BatchJob) Run(concurrent int) <-chan TaskResult {
 			continue
 		}
 
-		in := generator(job.Task)
+		in := generator(job.Tasks)
 		out := host.DoTasks(in, job.Concurrent)
 
 		outs[i] = out
@@ -222,17 +222,7 @@ func (tmd *TaskMetaData) ID() string {
 	return tmd.id
 }
 
-/*
-type TaskJudge struct {
-}
-*/
-
-type Job []Task
-
-/*
-type JobResult struct {
-}
-*/
+//type Job []Task
 
 func generator(tasks []TaskDesc) chan Task {
 	out := make(chan Task, 1)
@@ -271,18 +261,25 @@ func (h *HostInfo) DoTask(upstream chan Task) <-chan TaskResult {
 				panic(err)
 			}
 
+			// Excecute one Task
 			res := make(chan TaskResult)
 			go task.Exec(res, session)
+
+			var result TaskResult
 			select {
-			case r := <-res:
-				out <- r
+			case result = <-res:
+				out <- result
 			case <-time.After(task.Timeout()):
 				fmt.Println("timeout cancelling...")
 				return
 			}
 
+			// Excecute Sub-tasks if any
 			if task.SubTask() != nil {
-				fmt.Println("There are sub tasks")
+				if result.Err != nil {
+					continue
+				}
+
 				subIn := generator(task.SubTask())
 				subOut := h.DoTasks(subIn, 1)
 				for res := range subOut {

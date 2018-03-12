@@ -1,4 +1,4 @@
-package gossh
+package CmdTask
 
 import (
 	"io/ioutil"
@@ -8,9 +8,8 @@ import (
 )
 
 type CmdTask struct {
-	TaskMetaData
-	//	TaskJudge
-	subTask []TaskDesc
+	//	subTask []TaskDesc
+	subTask []interface{}
 	cmd     string
 	timeout time.Duration
 }
@@ -21,7 +20,7 @@ func (t *CmdTask) Init(tdesc TaskDesc) Task {
 			id: tdesc.Id,
 		},
 		cmd:     tdesc.Cmd,
-		subTask: tdesc.Tasks,
+		subTask: tdesc.Task,
 		timeout: time.Duration(tdesc.Timeout) * time.Second,
 	}
 }
