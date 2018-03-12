@@ -8,8 +8,9 @@ import (
 )
 
 type CmdTask struct {
-	TaskMetaData
+	//	TaskMetaData
 	//	TaskJudge
+	task    TaskDesc
 	subTask []TaskDesc
 	cmd     string
 	timeout time.Duration
@@ -17,21 +18,20 @@ type CmdTask struct {
 
 func (t *CmdTask) Init(tdesc TaskDesc) Task {
 	return &CmdTask{
-		TaskMetaData: TaskMetaData{
-			id: tdesc.Id,
-		},
+		/*
+			TaskMetaData: TaskMetaData{
+				id: tdesc.Id,
+			},
+		*/
+		task:    tdesc,
 		cmd:     tdesc.Cmd,
 		subTask: tdesc.Tasks,
 		timeout: time.Duration(tdesc.Timeout) * time.Second,
 	}
 }
 
-func (t *CmdTask) Timeout() time.Duration {
-	return t.timeout
-}
-
 func (t *CmdTask) Exec(res chan TaskResult, session *ssh.Session) {
-	taskResult := TaskResult{Id: t.ID()}
+	taskResult := TaskResult{Id: t.task.Id}
 	defer func() { res <- taskResult }()
 
 	r, err := session.StdoutPipe()
@@ -73,4 +73,8 @@ func (t *CmdTask) Exec(res chan TaskResult, session *ssh.Session) {
 
 func (t *CmdTask) SubTask() []TaskDesc {
 	return t.subTask
+}
+
+func (t *CmdTask) Timeout() time.Duration {
+	return t.timeout
 }

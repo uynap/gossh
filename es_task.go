@@ -14,8 +14,9 @@ import (
 )
 
 type ESTask struct {
-	TaskMetaData
+	//	TaskMetaData
 	//	TaskJudge
+	task    TaskDesc
 	subTask []TaskDesc
 	cmd     string
 	timeout time.Duration
@@ -101,9 +102,12 @@ type Sip struct {
 
 func (t *ESTask) Init(tdesc TaskDesc) Task {
 	return &ESTask{
-		TaskMetaData: TaskMetaData{
-			id: tdesc.Id,
-		},
+		/*
+			TaskMetaData: TaskMetaData{
+				id: tdesc.Id,
+			},
+		*/
+		task:    tdesc,
 		cmd:     tdesc.Cmd,
 		subTask: tdesc.Tasks,
 		timeout: time.Duration(tdesc.Timeout) * time.Second,
@@ -115,7 +119,7 @@ func (t *ESTask) Timeout() time.Duration {
 }
 
 func (t *ESTask) Exec(res chan TaskResult, session *ssh.Session) {
-	taskResult := TaskResult{Id: t.ID()}
+	taskResult := TaskResult{Id: t.task.Id}
 	defer func() { res <- taskResult }()
 
 	r, err := session.StdoutPipe()

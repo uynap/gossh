@@ -178,7 +178,7 @@ func (h *HostInfo) ConnectAs(acc AccountInfo, timeout time.Duration) error {
 
 type Task interface {
 	// Task ID
-	ID() string
+	//	ID() string
 
 	// Run Task
 	Exec(chan TaskResult, *ssh.Session)
@@ -212,8 +212,11 @@ type TaskResult struct {
 
 	// Sub tasks result
 	SubTask []TaskResult
+
+	TaskDesc TaskDesc
 }
 
+/*
 type TaskMetaData struct {
 	id string
 }
@@ -221,8 +224,7 @@ type TaskMetaData struct {
 func (tmd *TaskMetaData) ID() string {
 	return tmd.id
 }
-
-//type Job []Task
+*/
 
 func generator(tasks []TaskDesc) chan Task {
 	out := make(chan Task, 1)

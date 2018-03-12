@@ -12,7 +12,7 @@ import (
 )
 
 type DownloadTask struct {
-	TaskMetaData
+	//	TaskMetaData
 	//	TaskJudge
 	subTask []TaskDesc
 	cmd     string
