@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"compress/gzip"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"golang.org/x/crypto/ssh"
 )
 
 type DownloadTask struct {
 	TaskMetaData
-	TaskJudge
+	//	TaskJudge
 	subTask []TaskDesc
 	cmd     string
 }

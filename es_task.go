@@ -6,15 +6,16 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"gopkg.in/olivere/elastic.v3"
 )
 
 type ESTask struct {
 	TaskMetaData
-	TaskJudge
+	//	TaskJudge
 	subTask []TaskDesc
 	cmd     string
 	timeout time.Duration
@@ -101,7 +102,7 @@ type Sip struct {
 func (t *ESTask) Init(tdesc TaskDesc) Task {
 	return &ESTask{
 		TaskMetaData: TaskMetaData{
-			id: tdesc.ID,
+			id: tdesc.Id,
 		},
 		cmd:     tdesc.Cmd,
 		subTask: tdesc.Task,
@@ -114,7 +115,7 @@ func (t *ESTask) Timeout() time.Duration {
 }
 
 func (t *ESTask) Exec(res chan TaskResult, session *ssh.Session) {
-	taskResult := TaskResult{ID: t.ID()}
+	taskResult := TaskResult{Id: t.ID()}
 	defer func() { res <- taskResult }()
 
 	r, err := session.StdoutPipe()

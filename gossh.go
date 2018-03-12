@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -14,18 +13,25 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+var TaskType = map[string]Task{
+	"ESTask":  &ESTask{},
+	"CmdTask": &CmdTask{},
+	//	"DownloadTask": &DownloadTask{},
+}
+
 type JobDesc struct {
+	Id         string     `json:"id"`
 	Host       string     `json:"host"`
 	Port       string     `json:"port"`
 	User       string     `json:"user"`
-	Pass       string     `json:"Pass"`
-	Timeout    int        `json:"Timeout"`
+	Pass       string     `json:"pass"`
+	Timeout    int        `json:"timeout"`
 	Concurrent int        `json:"concurrent"`
 	Task       []TaskDesc `json:"task"`
 }
 
 type TaskDesc struct {
-	ID         string     `json:"id"`
+	Id         string     `json:"id"`
 	Cmd        string     `json:"cmd"`
 	Type       string     `json:"type"`
 	Timeout    int        `json:"timeout"`
@@ -40,6 +46,7 @@ func decodeJSON(filename string) ([]JobDesc, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if err := json.Unmarshal(bytes, &jobs); err != nil {
 		return nil, err
 	}
@@ -60,9 +67,11 @@ func NextID() string {
 	if r == 0 {
 		r = reseed()
 	}
+
 	r = r*1664525 + 1013904223 // constants from Numerical Recipes
 	rand = r
 	randmu.Unlock()
+
 	return strconv.Itoa(int(1e9 + r%1e9))[1:]
 }
 
@@ -87,7 +96,7 @@ func LoadJobs(file interface{}) *BatchJob {
 		// Add Task ID for each job
 		for i, job := range jobs {
 			for j, _ := range job.Task {
-				jobs[i].Task[j].ID = NextID()
+				jobs[i].Task[j].Id = NextID()
 			}
 		}
 
@@ -113,6 +122,10 @@ func (bj *BatchJob) Run(concurrent int) <-chan TaskResult {
 		}
 		err := host.ConnectAs(account, time.Duration(job.Timeout)*time.Second)
 		if err != nil {
+			out := make(chan TaskResult, 1)
+			out <- TaskResult{Id: job.Id, Err: err}
+			outs[i] = out
+			close(out)
 			continue
 		}
 
@@ -155,7 +168,6 @@ func (h *HostInfo) ConnectAs(acc AccountInfo, timeout time.Duration) error {
 	addr := net.JoinHostPort(h.Host, h.Port)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		log.Panic("Failed to dial: ", err.Error())
 		return err
 	}
 
@@ -180,7 +192,7 @@ type Task interface {
 }
 
 type TaskResult struct {
-	ID string
+	Id string
 	// Standard output
 	Stdout string
 
@@ -195,7 +207,7 @@ type TaskResult struct {
 	// Task's error if any
 	Err error
 
-	// 任务经过裁决后的结论
+	// The conclusion of the task
 	result string
 
 	// Sub tasks result
@@ -210,19 +222,17 @@ func (tmd *TaskMetaData) ID() string {
 	return tmd.id
 }
 
+/*
 type TaskJudge struct {
 }
+*/
 
 type Job []Task
 
+/*
 type JobResult struct {
 }
-
-var TaskType = map[string]Task{
-	"ESTask":  &ESTask{},
-	"CmdTask": &CmdTask{},
-	//	"DownloadTask": &DownloadTask{},
-}
+*/
 
 func generator(tasks []TaskDesc) chan Task {
 	out := make(chan Task, 1)
