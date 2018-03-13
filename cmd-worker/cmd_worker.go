@@ -1,21 +1,28 @@
-package CmdTask
+package cmd
 
 import (
 	"io/ioutil"
 	"time"
 
 	"golang.org/x/crypto/ssh"
+
+	"gossh"
 )
 
-type CmdTask struct {
+type CmdWorker struct {
 	//	subTask []TaskDesc
-	subTask []interface{}
-	cmd     string
-	timeout time.Duration
+	subTask  []interface{}
+	cmd      string
+	timeout  time.Duration
+	evaluate func(*TaskResult) error
 }
 
-func (t *CmdTask) Init(tdesc TaskDesc) Task {
-	return &CmdTask{
+func init() {
+	gossh.Register("CmdWorker", &CmdWorker{})
+}
+
+func (t *CmdWorker) Init(tdesc TaskDesc) Task {
+	return &CmdWorker{
 		TaskMetaData: TaskMetaData{
 			id: tdesc.Id,
 		},
@@ -25,11 +32,12 @@ func (t *CmdTask) Init(tdesc TaskDesc) Task {
 	}
 }
 
-func (t *CmdTask) Timeout() time.Duration {
+func (t *CmdWorker) Timeout() time.Duration {
 	return t.timeout
 }
 
-func (t *CmdTask) Exec(res chan TaskResult, session *ssh.Session) {
+// Exec() will be run in a separated goroutine.
+func (t *CmdWorker) Exec(res chan TaskResult, session *ssh.Session) {
 	taskResult := TaskResult{Id: t.ID()}
 	defer func() { res <- taskResult }()
 
@@ -70,6 +78,6 @@ func (t *CmdTask) Exec(res chan TaskResult, session *ssh.Session) {
 	return
 }
 
-func (t *CmdTask) SubTask() []TaskDesc {
+func (t *CmdWorker) SubTask() []TaskDesc {
 	return t.subTask
 }

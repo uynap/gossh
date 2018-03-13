@@ -11,15 +11,35 @@ import (
 	"time"
 
 	"golang.org/x/crypto/ssh"
+
+	"gossh/worker"
 )
 
+/*
 var TaskType = map[string]Task{
 	"ESTask":  &ESTask{},
 	"CmdTask": &CmdTask{},
 	//	"DownloadTask": &DownloadTask{},
 }
+*/
 
-//var TaskType = make(map[string]Task)
+var (
+	workersMu sync.RWMutex
+	workers   = make(map[string]worker.Worker)
+)
+
+func Register(name string, worker worker.Worker) {
+	workersMu.Lock()
+	defer workersMu.Unlock()
+
+	if worker == nil {
+		panic("gossh: Register worker is nil")
+	}
+
+	if _, dup := workers[name]; dup {
+		panic("gossh: Register called twice for driver " + name)
+	}
+}
 
 type JobDesc struct {
 	Id         string     `json:"id"`
@@ -238,7 +258,7 @@ func generator(tasks []TaskDesc) chan Task {
 				//				fmt.Printf("%#v\n", t)
 				out <- t
 			} else {
-				fmt.Println("skipping invalid task type")
+				log.Error("gossh: Task type is not supported: " + tdesc.Type)
 				continue
 			}
 		}
