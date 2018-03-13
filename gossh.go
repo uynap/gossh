@@ -19,6 +19,8 @@ var TaskType = map[string]Task{
 	//	"DownloadTask": &DownloadTask{},
 }
 
+//var TaskType = make(map[string]Task)
+
 type JobDesc struct {
 	Id         string     `json:"id"`
 	Host       string     `json:"host"`
