@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"gossh/task"
 	"gossh/worker"
 )
 
@@ -41,28 +42,8 @@ func Register(name string, worker worker.Worker) {
 	}
 }
 
-type JobDesc struct {
-	Id         string     `json:"id"`
-	Host       string     `json:"host"`
-	Port       string     `json:"port"`
-	User       string     `json:"user"`
-	Pass       string     `json:"pass"`
-	Timeout    int        `json:"timeout"`
-	Concurrent int        `json:"concurrent"`
-	Tasks      []TaskDesc `json:"tasks"`
-}
-
-type TaskDesc struct {
-	Id         string     `json:"id"`
-	Cmd        string     `json:"cmd"`
-	Type       string     `json:"type"`
-	Timeout    int        `json:"timeout"`
-	Concurrent int        `json:"concurrent"`
-	Tasks      []TaskDesc `json:"tasks"`
-}
-
-func decodeJSON(filename string) ([]JobDesc, error) {
-	var jobs []JobDesc
+func decodeJSON(filename string) ([]task.JobDesc, error) {
+	var jobs []task.JobDesc
 
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -98,8 +79,10 @@ func NextID() string {
 }
 
 type BatchJob struct {
-	Jobs []JobDesc
+	Jobs []task.JobDesc
 }
+
+type Epic []task.JobDesc
 
 func LoadBP(file interface{}) *BatchJob {
 	batchJob := &BatchJob{}
@@ -107,7 +90,7 @@ func LoadBP(file interface{}) *BatchJob {
 	switch file := file.(type) {
 	default:
 		panic("LoadBP: only support file path or []JobDesc")
-	case []JobDesc:
+	case []task.JobDesc:
 		batchJob.Jobs = file
 	case string:
 		jobs, err := decodeJSON(file)
@@ -128,11 +111,11 @@ func LoadBP(file interface{}) *BatchJob {
 	return batchJob
 }
 
-func (bj *BatchJob) Run(concurrent int) <-chan TaskResult {
+func (bj *BatchJob) Run(concurrent int) <-chan task.TaskResult {
 	done := make(chan struct{})
 	defer close(done)
 
-	outs := make([]<-chan TaskResult, len(bj.Jobs))
+	outs := make([]<-chan task.TaskResult, len(bj.Jobs))
 	for i, job := range bj.Jobs {
 		host := HostInfo{
 			Host: job.Host,
@@ -144,8 +127,8 @@ func (bj *BatchJob) Run(concurrent int) <-chan TaskResult {
 		}
 		err := host.ConnectAs(account, time.Duration(job.Timeout)*time.Second)
 		if err != nil {
-			out := make(chan TaskResult, 1)
-			out <- TaskResult{Id: job.Id, Err: err}
+			out := make(chan task.TaskResult, 1)
+			out <- task.TaskResult{Id: job.Id, Err: err}
 			outs[i] = out
 			close(out)
 			continue
@@ -203,39 +186,14 @@ type Task interface {
 	//	ID() string
 
 	// Run Task
-	Exec(chan TaskResult, *ssh.Session)
+	Exec(chan task.TaskResult, *ssh.Session)
 
 	// Sub tasks
-	SubTask() []TaskDesc
+	SubTask() []task.TaskDesc
 
-	Init(TaskDesc) Task
+	Init(task.TaskDesc) Task
 
 	Timeout() time.Duration
-}
-
-type TaskResult struct {
-	Id string
-	// Standard output
-	Stdout string
-
-	// Standard error
-	Stderr string
-
-	// 如果任务的输出能够分为标准输出和标准错误输出的话，
-	// 这里就是两者的混合，就像是你在显示器上看到的一样；
-	// 如果不能够区分的话，那么 output 就是任务的输出
-	Output string
-
-	// Task's error if any
-	Err error
-
-	// The conclusion of the task
-	result string
-
-	// Sub tasks result
-	SubTask []TaskResult
-
-	TaskDesc TaskDesc
 }
 
 /*
@@ -248,13 +206,13 @@ func (tmd *TaskMetaData) ID() string {
 }
 */
 
-func generator(tasks []TaskDesc) chan Task {
-	out := make(chan Task, 1)
+func generator(tasks []task.TaskDesc) chan worker.Worker {
+	out := make(chan worker.Worker, 1)
 	go func() {
 		defer close(out)
 		for _, tdesc := range tasks {
-			if t, ok := TaskType[tdesc.Type]; ok {
-				t := t.Init(tdesc)
+			if t, ok := workers[tdesc.Type]; ok {
+				t := t.InitWorker(tdesc)
 				//				fmt.Printf("%#v\n", t)
 				out <- t
 			} else {
@@ -266,16 +224,16 @@ func generator(tasks []TaskDesc) chan Task {
 	return out
 }
 
-func (h *HostInfo) DoTasks(upstream chan Task, num int) <-chan TaskResult {
-	outs := make([]<-chan TaskResult, num)
+func (h *HostInfo) DoTasks(upstream chan worker.Worker, num int) <-chan task.TaskResult {
+	outs := make([]<-chan task.TaskResult, num)
 	for i := 0; i < num; i++ {
 		outs[i] = h.DoTask(upstream)
 	}
 	return merge(outs)
 }
 
-func (h *HostInfo) DoTask(upstream chan Task) <-chan TaskResult {
-	out := make(chan TaskResult)
+func (h *HostInfo) DoTask(upstream chan Task) <-chan task.TaskResult {
+	out := make(chan task.TaskResult)
 	go func() {
 		defer close(out)
 
@@ -286,10 +244,10 @@ func (h *HostInfo) DoTask(upstream chan Task) <-chan TaskResult {
 			}
 
 			// Excecute one Task
-			res := make(chan TaskResult)
+			res := make(chan task.TaskResult)
 			go task.Exec(res, session)
 
-			var result TaskResult
+			var result task.TaskResult
 			select {
 			case result = <-res:
 				out <- result
@@ -315,11 +273,11 @@ func (h *HostInfo) DoTask(upstream chan Task) <-chan TaskResult {
 	return out
 }
 
-func merge(cs []<-chan TaskResult) <-chan TaskResult {
+func merge(cs []<-chan task.TaskResult) <-chan task.TaskResult {
 	var wg sync.WaitGroup
-	out := make(chan TaskResult, 10)
+	out := make(chan task.TaskResult, 10)
 
-	output := func(c <-chan TaskResult) {
+	output := func(c <-chan task.TaskResult) {
 		defer wg.Done()
 		for n := range c {
 			out <- n

@@ -3,6 +3,8 @@ package worker
 import (
 	"time"
 
+	"gossh/task"
+
 	"golang.org/x/crypto/ssh"
 )
 
@@ -11,12 +13,12 @@ type Worker interface {
 	//	ID() string
 
 	// Run Task
-	Exec(chan TaskResult, *ssh.Session)
+	Exec(chan task.TaskResult, *ssh.Session)
 
 	// Sub tasks
-	SubTask() []TaskDesc
+	SubTask() []task.TaskDesc
 
-	Init(TaskDesc) Task
+	InitWorker(task.TaskDesc) Worker
 
 	Timeout() time.Duration
 }
