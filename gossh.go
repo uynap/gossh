@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -216,7 +217,7 @@ func generator(tasks []task.TaskDesc) chan worker.Worker {
 				//				fmt.Printf("%#v\n", t)
 				out <- t
 			} else {
-				log.Error("gossh: Task type is not supported: " + tdesc.Type)
+				log.Print("gossh: Task type is not supported: " + tdesc.Type)
 				continue
 			}
 		}
@@ -232,37 +233,37 @@ func (h *HostInfo) DoTasks(upstream chan worker.Worker, num int) <-chan task.Tas
 	return merge(outs)
 }
 
-func (h *HostInfo) DoTask(upstream chan Task) <-chan task.TaskResult {
+func (h *HostInfo) DoTask(upstream chan worker.Worker) <-chan task.TaskResult {
 	out := make(chan task.TaskResult)
 	go func() {
 		defer close(out)
 
-		for task := range upstream {
+		for worker := range upstream {
 			session, err := h.Handle.NewSession()
 			if err != nil {
 				panic(err)
 			}
 
 			// Excecute one Task
-			res := make(chan task.TaskResult)
-			go task.Exec(res, session)
+			resCh := make(chan task.TaskResult)
+			go worker.Exec(resCh, session)
 
 			var result task.TaskResult
 			select {
-			case result = <-res:
+			case result = <-resCh:
 				out <- result
-			case <-time.After(task.Timeout()):
+			case <-time.After(worker.Timeout()):
 				fmt.Println("timeout cancelling...")
 				return
 			}
 
 			// Excecute Sub-tasks if any
-			if task.SubTask() != nil {
+			if worker.SubTask() != nil {
 				if result.Err != nil {
 					continue
 				}
 
-				subIn := generator(task.SubTask())
+				subIn := generator(worker.SubTask())
 				subOut := h.DoTasks(subIn, 1)
 				for res := range subOut {
 					out <- res
