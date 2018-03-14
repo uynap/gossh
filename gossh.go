@@ -85,14 +85,14 @@ type BatchJob struct {
 
 type Epic []task.JobDesc
 
-func LoadBP(file interface{}) *BatchJob {
-	batchJob := &BatchJob{}
+func LoadBP(file interface{}) *Epic {
+	var epic Epic
 
 	switch file := file.(type) {
 	default:
 		panic("LoadBP: only support file path or []JobDesc")
 	case []task.JobDesc:
-		batchJob.Jobs = file
+		epic = file
 	case string:
 		jobs, err := decodeJSON(file)
 		if err != nil {
@@ -106,18 +106,18 @@ func LoadBP(file interface{}) *BatchJob {
 			}
 		}
 
-		batchJob.Jobs = jobs
+		epic = jobs
 	}
 
-	return batchJob
+	return &epic
 }
 
-func (bj *BatchJob) Run(concurrent int) <-chan task.TaskResult {
+func (epic *Epic) Run(concurrent int) <-chan task.TaskResult {
 	done := make(chan struct{})
 	defer close(done)
 
-	outs := make([]<-chan task.TaskResult, len(bj.Jobs))
-	for i, job := range bj.Jobs {
+	outs := make([]<-chan task.TaskResult, len(*epic))
+	for i, job := range *epic {
 		host := HostInfo{
 			Host: job.Host,
 			Port: job.Port,
