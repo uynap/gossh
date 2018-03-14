@@ -41,6 +41,8 @@ func Register(name string, worker worker.Worker) {
 	if _, dup := workers[name]; dup {
 		panic("gossh: Register called twice for driver " + name)
 	}
+
+	workers[name] = worker
 }
 
 func decodeJSON(filename string) ([]task.JobDesc, error) {
