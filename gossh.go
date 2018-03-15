@@ -17,14 +17,6 @@ import (
 	"gossh/worker"
 )
 
-/*
-var TaskType = map[string]Task{
-	"ESTask":  &ESTask{},
-	"CmdTask": &CmdTask{},
-	//	"DownloadTask": &DownloadTask{},
-}
-*/
-
 var (
 	workersMu sync.RWMutex
 	workers   = make(map[string]worker.Worker)
@@ -79,10 +71,6 @@ func NextID() string {
 	randmu.Unlock()
 
 	return strconv.Itoa(int(1e9 + r%1e9))[1:]
-}
-
-type BatchJob struct {
-	Jobs []task.JobDesc
 }
 
 type Epic []task.JobDesc
@@ -184,21 +172,6 @@ func (h *HostInfo) ConnectAs(acc AccountInfo, timeout time.Duration) error {
 	return nil
 }
 
-type Task interface {
-	// Task ID
-	//	ID() string
-
-	// Run Task
-	Exec(chan task.TaskResult, *ssh.Session)
-
-	// Sub tasks
-	SubTask() []task.TaskDesc
-
-	Init(task.TaskDesc) Task
-
-	Timeout() time.Duration
-}
-
 /*
 type TaskMetaData struct {
 	id string
@@ -284,14 +257,6 @@ func merge(cs []<-chan task.TaskResult) <-chan task.TaskResult {
 		defer wg.Done()
 		for n := range c {
 			out <- n
-			/*
-				select {
-				case out <- n:
-				case <-done:
-					fmt.Println("merge: done is called")
-					return
-				}
-			*/
 		}
 	}
 	wg.Add(len(cs))
