@@ -129,11 +129,6 @@ func (epic *Epic) Run(concurrent int) <-chan task.TaskResult {
 		out := host.DoTasks(in, job.Concurrent)
 
 		outs[i] = out
-		/*
-			for res := range out {
-				fmt.Println("finish one task:", res.output)
-			}
-		*/
 	}
 	return merge(outs)
 }
@@ -189,7 +184,6 @@ func generator(tasks []task.TaskDesc) chan worker.Worker {
 		for _, tdesc := range tasks {
 			if t, ok := workers[tdesc.Type]; ok {
 				t := t.InitWorker(tdesc)
-				//				fmt.Printf("%#v\n", t)
 				out <- t
 			} else {
 				log.Print("gossh: Task type is not supported: " + tdesc.Type)
