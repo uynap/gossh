@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -52,27 +51,6 @@ func decodeJSON(filename string) ([]task.JobDesc, error) {
 	return jobs, nil
 }
 
-var rand uint32
-var randmu sync.Mutex
-
-func reseed() uint32 {
-	return uint32(time.Now().UnixNano() + int64(os.Getpid()))
-}
-
-func NextID() string {
-	randmu.Lock()
-	r := rand
-	if r == 0 {
-		r = reseed()
-	}
-
-	r = r*1664525 + 1013904223 // constants from Numerical Recipes
-	rand = r
-	randmu.Unlock()
-
-	return strconv.Itoa(int(1e9 + r%1e9))[1:]
-}
-
 type Epic []task.JobDesc
 
 func LoadBP(file interface{}) *Epic {
@@ -89,10 +67,10 @@ func LoadBP(file interface{}) *Epic {
 			panic(err)
 		}
 
-		// Add Task ID for each job
+		// Add ID for each task
 		for i, job := range jobs {
 			for j, _ := range job.Tasks {
-				jobs[i].Tasks[j].Id = NextID()
+				jobs[i].Tasks[j].Id = strconv.Itoa(i+1) + "-" + strconv.Itoa(j+1)
 			}
 		}
 
@@ -119,7 +97,7 @@ func (epic *Epic) Run(concurrent int) <-chan task.TaskResult {
 		err := host.ConnectAs(account, time.Duration(job.Timeout)*time.Second)
 		if err != nil {
 			out := make(chan task.TaskResult, 1)
-			out <- task.TaskResult{Id: job.Id, Err: err}
+			out <- task.TaskResult{Err: err}
 			outs[i] = out
 			close(out)
 			continue
@@ -220,6 +198,9 @@ func (h *HostInfo) DoTask(upstream chan worker.Worker) <-chan task.TaskResult {
 			var result task.TaskResult
 			select {
 			case result = <-resCh:
+				result.Output = result.Stdout + result.Stderr
+				//	result.Err = worker.Evaluate(result.Output)
+
 				out <- result
 			case <-time.After(worker.Timeout()):
 				fmt.Println("timeout cancelling...")

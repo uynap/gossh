@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -15,36 +14,49 @@ import (
 type CmdTask struct {
 	//	TaskMetaData
 	//	TaskJudge
-	task    task.TaskDesc
-	subTask []task.TaskDesc
-	cmd     string
-	timeout time.Duration
+	taskDesc task.TaskDesc
+	subTask  []task.TaskDesc
+	cmd      string
+	timeout  time.Duration
+	stdout   string
 }
 
+var (
+	evaluator = func(Stdout string) error { return nil }
+)
+
 func init() {
-	fmt.Println("get init")
 	gossh.Register("CmdTask", &CmdTask{})
 }
 
 func (t *CmdTask) InitWorker(tdesc task.TaskDesc) worker.Worker {
 	return &CmdTask{
-		/*
-			TaskMetaData: TaskMetaData{
-				id: tdesc.Id,
-			},
-		*/
-		task:    tdesc,
-		cmd:     tdesc.Cmd,
-		subTask: tdesc.Tasks,
-		timeout: time.Duration(tdesc.Timeout) * time.Second,
+		taskDesc: tdesc,
+		cmd:      tdesc.Cmd,
+		subTask:  tdesc.Tasks,
+		timeout:  time.Duration(tdesc.Timeout) * time.Second,
 	}
 }
 
+func Evaluator(f func(string) error) {
+	evaluator = f
+}
+
+func (t *CmdTask) Evaluate(str string) error {
+	return evaluator(str)
+}
+
 func (t *CmdTask) Exec(res chan task.TaskResult, session *ssh.Session) {
-	taskResult := task.TaskResult{Id: t.task.Id}
+	taskResult := task.TaskResult{TaskDesc: t.taskDesc}
 	defer func() { res <- taskResult }()
 
-	r, err := session.StdoutPipe()
+	rOut, err := session.StdoutPipe()
+	if err != nil {
+		taskResult.Err = err
+		return
+	}
+
+	rErr, err := session.StderrPipe()
 	if err != nil {
 		taskResult.Err = err
 		return
@@ -55,29 +67,30 @@ func (t *CmdTask) Exec(res chan task.TaskResult, session *ssh.Session) {
 		return
 	}
 
-	buf, err := ioutil.ReadAll(r)
+	// Read stdout
+	buf, err := ioutil.ReadAll(rOut)
 	if err != nil {
 		taskResult.Err = err
 		return
 	}
 
 	taskResult.Stdout = string(buf)
-	/*
-		br := bufio.NewReader(r)
-		for {
-			line, _, err := br.ReadLine()
-			if err != nil {
-				break
-			}
 
-			fmt.Println("oneLine:", string(line))
-		}
-	*/
+	// Read stderr
+	buf, err = ioutil.ReadAll(rErr)
+	if err != nil {
+		taskResult.Err = err
+		return
+	}
 
+	taskResult.Stderr = string(buf)
+
+	// Wait for the command
 	if err := session.Wait(); err != nil {
 		taskResult.Err = err
 		return
 	}
+
 	return
 }
 

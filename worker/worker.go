@@ -21,4 +21,6 @@ type Worker interface {
 	InitWorker(task.TaskDesc) Worker
 
 	Timeout() time.Duration
+
+	Evaluate(string) error
 }
