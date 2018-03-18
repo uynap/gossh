@@ -1,0 +1,24 @@
+[
+    {
+        "host" : "127.0.0.1",
+        "port" : "22",
+        "user" : "py",
+        "pass" : "",
+        "concurrent" : 1,
+        "timeout": 5,
+        "tasks" : [
+            {
+                "cmd" : "2uname -a",
+                "type" : "CmdTask",
+                "timeout" : 3,
+                "concurrent" : 1
+            },
+            {
+                "cmd" : "uptime",
+                "type" : "CmdTask",
+                "timeout" : 3,
+                "concurrent" : 1
+            }
+        ]
+    }
+]

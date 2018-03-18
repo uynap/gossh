@@ -41,6 +41,4 @@ type TaskResult struct {
 
 	// Sub tasks result
 	SubTask []TaskResult
-
-	//	TaskDesc TaskDesc
 }

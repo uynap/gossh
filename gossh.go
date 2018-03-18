@@ -80,7 +80,7 @@ func LoadBP(file interface{}) *Epic {
 	return &epic
 }
 
-func (epic *Epic) Run(concurrent int) <-chan task.TaskResult {
+func (epic *Epic) Run() <-chan task.TaskResult {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -145,23 +145,13 @@ func (h *HostInfo) ConnectAs(acc AccountInfo, timeout time.Duration) error {
 	return nil
 }
 
-/*
-type TaskMetaData struct {
-	id string
-}
-
-func (tmd *TaskMetaData) ID() string {
-	return tmd.id
-}
-*/
-
 func generator(tasks []task.TaskDesc) chan worker.Worker {
 	out := make(chan worker.Worker, 1)
 	go func() {
 		defer close(out)
 		for _, tdesc := range tasks {
 			if t, ok := workers[tdesc.Type]; ok {
-				t := t.InitWorker(tdesc)
+				t := t.NewWorker(tdesc)
 				out <- t
 			} else {
 				log.Print("gossh: Task type is not supported: " + tdesc.Type)
@@ -199,7 +189,7 @@ func (h *HostInfo) DoTask(upstream chan worker.Worker) <-chan task.TaskResult {
 			select {
 			case result = <-resCh:
 				result.Output = result.Stdout + result.Stderr
-				//	result.Err = worker.Evaluate(result.Output)
+				result.Err = worker.Evaluate(result)
 
 				out <- result
 			case <-time.After(worker.Timeout()):

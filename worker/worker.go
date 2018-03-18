@@ -18,9 +18,9 @@ type Worker interface {
 	// Sub tasks
 	SubTask() []task.TaskDesc
 
-	InitWorker(task.TaskDesc) Worker
+	NewWorker(task.TaskDesc) Worker
 
 	Timeout() time.Duration
 
-	Evaluate(string) error
+	Evaluate(task.TaskResult) error
 }

@@ -12,24 +12,25 @@ import (
 )
 
 type CmdTask struct {
-	//	TaskMetaData
-	//	TaskJudge
 	taskDesc task.TaskDesc
 	subTask  []task.TaskDesc
 	cmd      string
 	timeout  time.Duration
 	stdout   string
+	option   interface{}
 }
 
 var (
-	evaluator = func(Stdout string) error { return nil }
+	evaluator = func(result task.TaskResult) error {
+		return result.Err
+	}
 )
 
 func init() {
 	gossh.Register("CmdTask", &CmdTask{})
 }
 
-func (t *CmdTask) InitWorker(tdesc task.TaskDesc) worker.Worker {
+func (t *CmdTask) NewWorker(tdesc task.TaskDesc) worker.Worker {
 	return &CmdTask{
 		taskDesc: tdesc,
 		cmd:      tdesc.Cmd,
@@ -38,12 +39,12 @@ func (t *CmdTask) InitWorker(tdesc task.TaskDesc) worker.Worker {
 	}
 }
 
-func Evaluator(f func(string) error) {
+func Evaluator(f func(task.TaskResult) error) {
 	evaluator = f
 }
 
-func (t *CmdTask) Evaluate(str string) error {
-	return evaluator(str)
+func (t *CmdTask) Evaluate(result task.TaskResult) error {
+	return evaluator(result)
 }
 
 func (t *CmdTask) Exec(res chan task.TaskResult, session *ssh.Session) {
