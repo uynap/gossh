@@ -3,8 +3,7 @@ package worker
 import (
 	"time"
 
-	"gossh/task"
-
+	"github.com/uynap/gossh/task"
 	"golang.org/x/crypto/ssh"
 )
 

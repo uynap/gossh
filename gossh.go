@@ -10,10 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/uynap/gossh/task"
+	"github.com/uynap/gossh/worker"
 	"golang.org/x/crypto/ssh"
-
-	"gossh/task"
-	"gossh/worker"
 )
 
 var (

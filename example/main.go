@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gossh"
-	_ "gossh/cmd-worker"
 	"log"
+
+	"github.com/uynap/gossh"
+	_ "github.com/uynap/gossh/cmdworker"
 )
 
 func init() {

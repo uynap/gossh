@@ -4,9 +4,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"gossh"
-	"gossh/task"
-	"gossh/worker"
+	"github.com/uynap/gossh"
+	"github.com/uynap/gossh/task"
+	"github.com/uynap/gossh/worker"
 
 	"golang.org/x/crypto/ssh"
 )
