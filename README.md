@@ -40,7 +40,7 @@ func main() {
 }
 ```
 
-A \*.bp file looks like below: 
+A \*.bp file looks like: 
 ```
 [
     {
@@ -66,3 +66,13 @@ A \*.bp file looks like below:
 ]
 ```
 
+## Installation
+`$ go get github.com/uynap/batRun`
+
+## How to write your own worker
+
+## License
+
+This project is licensed under the GNU GENERAL PUBLIC LICENSE.
+
+License can be found [here](LICENSE).
