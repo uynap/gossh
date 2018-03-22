@@ -153,7 +153,7 @@ func generator(tasks []task.TaskDesc) chan worker.Worker {
 				t := t.NewWorker(tdesc)
 				out <- t
 			} else {
-				log.Print("gossh: Task type is not supported: " + tdesc.Type)
+				log.Fatal("gossh: Task type is not supported: " + tdesc.Type)
 				continue
 			}
 		}
