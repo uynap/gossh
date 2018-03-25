@@ -23,7 +23,7 @@ type TaskDesc struct {
 
 type TaskResult struct {
 	TaskDesc
-	//	Id string
+
 	// Standard output
 	Stdout string
 

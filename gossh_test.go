@@ -1,7 +1,6 @@
 package gossh_test
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"testing"
@@ -14,15 +13,13 @@ import (
 func TestGossh(t *testing.T) {
 	go func() {
 		ssh.Handle(func(s ssh.Session) {
-			fmt.Println(s.Command())
-			io.WriteString(s, fmt.Sprintf("hello %s\n", s.User()))
+			io.WriteString(s, "helloworld\n")
 		})
 
-		log.Println("starting ssh server on port 2222...")
-		log.Fatal(ssh.ListenAndServe(":2222", nil))
+		log.Fatal(ssh.ListenAndServe("127.0.0.1:2222", nil))
 	}()
 
-	resultCh := gossh.LoadBP("./test.bp").Run()
+	resultCh := gossh.LoadBP("example/test.bp").Run()
 	for result := range resultCh {
 		if result.Err != nil {
 			t.Error(result.Err)

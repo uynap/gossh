@@ -70,6 +70,8 @@ A \*.bp file looks like:
 `$ go get github.com/uynap/batRun`
 
 ## How to write your own worker
+A worker is an interface defined at github.com/uynap/gossh/worker. Have a look 
+at "github.com/uynap/gossh/cmdworker" as an example to show how to write a worker.
 
 ## License
 

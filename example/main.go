@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/uynap/gossh"
 	_ "github.com/uynap/gossh/cmdworker"
@@ -21,7 +20,6 @@ func main() {
 	resCh := jobs.Run()
 	for res := range resCh {
 		if res.Err != nil {
-			log.Println("task error:", res.Err)
 			fmt.Println("Error:", res.Stderr)
 		}
 		fmt.Println(res.Id)
