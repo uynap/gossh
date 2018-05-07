@@ -69,22 +69,22 @@ func (t *CmdTask) Exec(res chan task.TaskResult, session *ssh.Session) {
 	}
 
 	// Read stdout
-	buf, err := ioutil.ReadAll(rOut)
+	bufStdout, err := ioutil.ReadAll(rOut)
 	if err != nil {
 		taskResult.Err = err
 		return
 	}
 
-	taskResult.Stdout = string(buf)
+	taskResult.Stdout = string(bufStdout)
 
 	// Read stderr
-	buf, err = ioutil.ReadAll(rErr)
+	bufStderr, err := ioutil.ReadAll(rErr)
 	if err != nil {
 		taskResult.Err = err
 		return
 	}
 
-	taskResult.Stderr = string(buf)
+	taskResult.Stderr = string(bufStderr)
 
 	// Wait for the command
 	if err := session.Wait(); err != nil {

@@ -12,13 +12,14 @@ type JobDesc struct {
 }
 
 type TaskDesc struct {
-	Id         string      `json:"id"`
-	Cmd        string      `json:"cmd"`
-	Type       string      `json:"type"`
-	Timeout    int         `json:"timeout"`
-	Concurrent int         `json:"concurrent"`
-	Tasks      []TaskDesc  `json:"tasks"`
-	Option     interface{} `json:"option"`
+	Id         string            `json:"id"`
+	Cmd        string            `json:"cmd"`
+	Type       string            `json:"type"`
+	Timeout    int               `json:"timeout"`
+	Concurrent int               `json:"concurrent"`
+	Tasks      []TaskDesc        `json:"tasks"`
+	Option     interface{}       `json:"option"`
+	Metadata   map[string]string `json:"metadata"`
 }
 
 type TaskResult struct {
