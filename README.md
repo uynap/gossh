@@ -67,7 +67,7 @@ A \*.bp file looks like:
 ```
 
 ## Installation
-`$ go get github.com/uynap/batRun`
+`$ go get github.com/uynap/gossh`
 
 ## How to write your own worker
 A worker is an interface defined at github.com/uynap/gossh/worker. Have a look 
