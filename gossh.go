@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -37,11 +38,18 @@ func Register(name string, worker worker.Worker) {
 
 func decodeJSON(filename string) ([]task.JobDesc, error) {
 	var jobs []task.JobDesc
+	var bytes []byte
 
-	bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
+	// str is a filename
+	if _, err := os.Stat(str); err == nil {
+		bytes, err = ioutil.ReadFile(str)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	// str is a JSON string
+	bytes = []byte(str)
 
 	if err := json.Unmarshal(bytes, &jobs); err != nil {
 		return nil, err
