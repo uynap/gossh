@@ -36,7 +36,7 @@ func Register(name string, worker worker.Worker) {
 	workers[name] = worker
 }
 
-func decodeJSON(filename string) ([]task.JobDesc, error) {
+func decodeJSON(str string) ([]task.JobDesc, error) {
 	var jobs []task.JobDesc
 	var bytes []byte
 
