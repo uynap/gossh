@@ -40,16 +40,17 @@ func decodeJSON(str string) ([]task.JobDesc, error) {
 	var jobs []task.JobDesc
 	var bytes []byte
 
-	// str is a filename
 	if _, err := os.Stat(str); err == nil {
+	    // str is a filename
 		bytes, err = ioutil.ReadFile(str)
 		if err != nil {
+			println("ioutil err:", str)
 			return nil, err
 		}
+	}else{
+	    // str is a JSON string
+	    bytes = []byte(str)
 	}
-
-	// str is a JSON string
-	bytes = []byte(str)
 
 	if err := json.Unmarshal(bytes, &jobs); err != nil {
 		return nil, err
